@@ -1,0 +1,12 @@
+[build]
+  command = "npm run build"
+  publish = "out"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# SPA-friendly redirects: serve index.html for client routes if needed.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
