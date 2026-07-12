@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -7,6 +7,7 @@ import { AppShell } from "@/components/app-shell";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea, Label } from "@/components/ui/input";
+import { ImageUpload } from "@/components/image-upload";
 import {
   nsecToSecret,
   isWriterNpub,
@@ -95,7 +96,7 @@ export default function SettingsPage() {
         setError(res.error || "Failed to save profile.");
         return;
       }
-      setInfo("Profile saved to relays (kind 0). Triggering rebuild…");
+      setInfo("Profile saved to relays (kind 0). Triggering rebuild...");
       await triggerRebuild();
     });
   }
@@ -103,7 +104,7 @@ export default function SettingsPage() {
   if (!mounted || !sk) {
     return (
       <AppShell>
-        <p className="text-muted-foreground">Loading…</p>
+        <p className="text-muted-foreground">Loading...</p>
       </AppShell>
     );
   }
@@ -111,7 +112,7 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <AppShell>
-        <p className="text-muted-foreground">Loading your profile…</p>
+        <p className="text-muted-foreground">Loading your profile...</p>
       </AppShell>
     );
   }
@@ -123,7 +124,7 @@ export default function SettingsPage() {
           <h1 className="font-serif text-2xl text-cream">Profile settings</h1>
           <Link href="/dashboard/">
             <Button variant="outline" size="sm">
-              ← Dashboard
+              Dashboard
             </Button>
           </Link>
         </div>
@@ -158,19 +159,17 @@ export default function SettingsPage() {
               value={about}
               onChange={(e) => setAbout(e.target.value)}
               rows={3}
-              placeholder="Writer, thinker, Bitcoiner…"
+              placeholder="Writer, thinker, Bitcoiner..."
             />
           </div>
 
-          <div>
-            <Label htmlFor="picture">Avatar image URL</Label>
-            <Input
-              id="picture"
-              value={picture}
-              onChange={(e) => setPicture(e.target.value)}
-              placeholder="https://…"
-            />
-          </div>
+          <ImageUpload
+            value={picture}
+            onChange={setPicture}
+            sk={sk}
+            label="Avatar image"
+            placeholder="Upload or paste a URL..."
+          />
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
@@ -197,7 +196,7 @@ export default function SettingsPage() {
           {info && <p className="text-sm text-warm-orange">{info}</p>}
 
           <Button onClick={save} disabled={pending}>
-            {pending ? "Saving…" : "Save profile"}
+            {pending ? "Saving..." : "Save profile"}
           </Button>
         </div>
       </div>

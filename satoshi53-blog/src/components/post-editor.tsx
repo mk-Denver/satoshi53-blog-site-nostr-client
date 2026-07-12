@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea, Label } from "@/components/ui/input";
+import { ImageUpload } from "@/components/image-upload";
 import {
   publishArticle,
   publishDraft,
@@ -41,7 +42,6 @@ export function PostEditor({
   const [info, setInfo] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  // The d tag: for new posts, derive from slug. For edits, keep the original.
   const existingD = initialValues?.d;
 
   function publish() {
@@ -52,7 +52,6 @@ export function PostEditor({
       return;
     }
     const finalSlug = slug || slugify(title);
-    // For edits, re-use the original d so the relay replaces the old version.
     const d = existingD || finalSlug;
     const tags = tagsInput.split(",").map((t) => t.trim()).filter(Boolean);
     startTransition(async () => {
@@ -69,12 +68,10 @@ export function PostEditor({
         setError(res.error || "Publishing failed.");
         return;
       }
-      setInfo("Published to relays. Triggering a site rebuild…");
+      setInfo("Published to relays. Triggering a site rebuild...");
       const rebuilt = await triggerRebuild();
       if (!rebuilt) {
-        setInfo(
-          "Published to relays. Ask an admin to rebuild, or it will appear on the next scheduled build.",
-        );
+        setInfo("Published to relays. Ask an admin to rebuild, or it will appear on the next scheduled build.");
       } else {
         setInfo("Published and rebuild triggered. Your post will be live shortly.");
         setTimeout(() => router.push(`/post/${finalSlug}/`), 2000);
@@ -121,7 +118,7 @@ export function PostEditor({
             setTitle(e.target.value);
             if (!slug || slug === slugify(title)) setSlug(slugify(e.target.value));
           }}
-          placeholder="An interesting post title…"
+          placeholder="An interesting post title..."
         />
       </div>
       <div>
@@ -150,12 +147,12 @@ export function PostEditor({
           )}
         </div>
         <div>
-          <Label htmlFor="cover">Cover image URL (optional)</Label>
-          <Input
-            id="cover"
+          <ImageUpload
             value={coverImage}
-            onChange={(e) => setCoverImage(e.target.value)}
-            placeholder="https://…"
+            onChange={setCoverImage}
+            sk={sk}
+            label="Cover image"
+            placeholder="Upload or paste a URL..."
           />
         </div>
       </div>
@@ -176,10 +173,10 @@ export function PostEditor({
           onChange={(e) => setBody(e.target.value)}
           rows={18}
           className="font-mono text-sm"
-          placeholder={"# Heading\n\nWrite your post in **Markdown**…"}
+          placeholder={"# Heading\n\nWrite your post in **Markdown**..."}
         />
         <p className="mt-1 text-xs text-muted-foreground">
-          {readingTime(body)} min read · {body.trim().split(/\s+/).filter(Boolean).length} words
+          {readingTime(body)} min read - {body.trim().split(/\s+/).filter(Boolean).length} words
         </p>
       </div>
 
@@ -188,7 +185,7 @@ export function PostEditor({
 
       <div className="flex gap-2">
         <Button onClick={publish} disabled={pending}>
-          {pending ? "Publishing…" : isEdit ? "Update & Publish" : "Publish to Nostr"}
+          {pending ? "Publishing..." : isEdit ? "Update & Publish" : "Publish to Nostr"}
         </Button>
         <Button variant="outline" onClick={saveDraft} disabled={pending}>
           Save draft
