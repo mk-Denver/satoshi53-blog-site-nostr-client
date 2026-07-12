@@ -1,4 +1,4 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { Avatar } from "@/components/ui/avatar";
@@ -6,6 +6,7 @@ import { TagPill } from "@/components/tag-pill";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { ReactionBar } from "@/components/reaction-bar";
 import { EditButton } from "@/components/edit-button";
+import { ShareButton } from "@/components/share-button";
 import { Comments } from "@/components/comments";
 import {
   fetchArticles,
@@ -13,6 +14,7 @@ import {
   fetchComments,
   fetchReactions,
 } from "@/lib/nostr";
+import { SITE } from "@/lib/constants";
 import { formatDate, shortNpub } from "@/lib/utils";
 
 
@@ -37,6 +39,8 @@ export default async function PostPage({
     fetchComments(post),
     fetchReactions(post),
   ]);
+
+  const postUrl = `${SITE.url}/post/${post.slug}/`;
 
   return (
     <AppShell>
@@ -68,10 +72,11 @@ export default async function PostPage({
               {author?.name || shortNpub(post.npub)}
             </Link>
             <p className="text-xs text-muted-foreground">
-              {formatDate(post.publishedAt)} Â· {post.readingTime} min read
+              {formatDate(post.publishedAt)} - {post.readingTime} min read
             </p>
           </div>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-2">
+            <ShareButton title={post.title} url={postUrl} />
             <EditButton slug={post.slug} authorPubkey={post.pubkey} />
           </div>
         </div>

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import {
 import { ReaderLogin, useReaderKey } from "@/components/reader-login";
 import type { ReactionSummary } from "@/lib/types";
 
-const QUICK_EMOJIS = ["❤️", "🦄", "🔥", "⚡", "👏"];
+const QUICK_EMOJIS = ["\u2764\ufe0f", "\ud83e\udd84", "\ud83d\udd25", "\u26a1", "\ud83d\udc4f"];
 
 export function ReactionBar({
   articleId,
@@ -26,11 +26,12 @@ export function ReactionBar({
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [showLogin, setShowLogin] = useState(false);
   const { sk } = useReaderKey();
 
   function react(emoji: string) {
     if (!sk) {
-      setError("Please log in to react.");
+      setShowLogin(true);
       return;
     }
     setError(null);
@@ -76,30 +77,33 @@ export function ReactionBar({
         )}
       </div>
 
-      {sk ? (
+      {showLogin && !sk ? (
         <div>
-          <div className="flex flex-wrap gap-2">
-            {QUICK_EMOJIS.map((emoji) => (
-              <Button
-                key={emoji}
-                size="sm"
-                variant="outline"
-                onClick={() => react(emoji)}
-                disabled={pending}
-              >
-                {emoji}
-              </Button>
-            ))}
-          </div>
-          {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
-          {info && <p className="mt-2 text-sm text-warm-orange">{info}</p>}
+          <ReaderLogin onLoggedIn={() => setShowLogin(false)} compact />
+          <button
+            onClick={() => setShowLogin(false)}
+            className="mt-2 text-xs text-muted-foreground hover:text-foreground"
+          >
+            Cancel
+          </button>
         </div>
       ) : (
-        <div>
-          <p className="text-sm text-muted-foreground mb-3">Log in to react</p>
-          <ReaderLogin />
+        <div className="flex flex-wrap gap-2">
+          {QUICK_EMOJIS.map((emoji) => (
+            <Button
+              key={emoji}
+              size="sm"
+              variant="outline"
+              onClick={() => react(emoji)}
+              disabled={pending}
+            >
+              {emoji}
+            </Button>
+          ))}
         </div>
       )}
+      {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
+      {info && <p className="mt-2 text-sm text-warm-orange">{info}</p>}
     </div>
   );
 }

@@ -1,9 +1,10 @@
-﻿"use client";
+"use client";
 
 import { useState, useTransition } from "react";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/input";
+import { MessageCircle } from "lucide-react";
 import {
   publishComment,
   triggerRebuild,
@@ -28,11 +29,12 @@ export function Comments({
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const [showLogin, setShowLogin] = useState(false);
   const { sk } = useReaderKey();
 
   function submit() {
     if (!sk) {
-      setError("Please log in to comment.");
+      setShowLogin(true);
       return;
     }
     if (!body.trim()) {
@@ -55,9 +57,7 @@ export function Comments({
       setBody("");
       const rebuilt = await triggerRebuild();
       if (!rebuilt) {
-        setInfo(
-          "Comment published. It will appear on the next scheduled build.",
-        );
+        setInfo("Comment published. It will appear on the next scheduled build.");
       }
     });
   }
@@ -74,19 +74,36 @@ export function Comments({
             value={body}
             onChange={(e) => setBody(e.target.value)}
             rows={3}
-            placeholder="Add to the discussion…"
+            placeholder="Add to the discussion\u2026"
           />
           {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
           {info && <p className="mt-2 text-sm text-warm-orange">{info}</p>}
           <div className="mt-2 flex justify-end">
             <Button size="sm" onClick={submit} disabled={pending || !body.trim()}>
-              {pending ? "Publishing…" : "Publish comment"}
+              {pending ? "Publishing\u2026" : "Publish comment"}
             </Button>
           </div>
         </div>
+      ) : showLogin ? (
+        <div className="mb-6">
+          <ReaderLogin onLoggedIn={() => setShowLogin(false)} />
+          <button
+            onClick={() => setShowLogin(false)}
+            className="mt-2 text-xs text-muted-foreground hover:text-foreground"
+          >
+            Cancel
+          </button>
+        </div>
       ) : (
         <div className="mb-6">
-          <ReaderLogin />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowLogin(true)}
+          >
+            <MessageCircle className="h-4 w-4" /> Sign in to comment
+          </Button>
+          {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
         </div>
       )}
 
@@ -100,7 +117,7 @@ export function Comments({
                   {c.authorName || shortNpub(c.npub)}
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  · {formatRelative(c.createdAt)}
+                  \u00b7 {formatRelative(c.createdAt)}
                 </span>
               </div>
               <p className="mt-1.5 text-sm text-foreground whitespace-pre-wrap">{c.content}</p>

@@ -5,8 +5,20 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/**
+ * Convert a Nostr timestamp (Unix seconds) or other date input to a Date.
+ * Nostr events use `created_at` in seconds; JavaScript Date uses milliseconds.
+ * If the number is small enough to be seconds (< 10^12), multiply by 1000.
+ */
+function toDate(date: string | Date | number): Date {
+  if (typeof date === "number" && date < 1e12) {
+    return new Date(date * 1000);
+  }
+  return new Date(date);
+}
+
 export function formatDate(date: string | Date | number): string {
-  const d = new Date(date);
+  const d = toDate(date);
   return d.toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
@@ -15,7 +27,7 @@ export function formatDate(date: string | Date | number): string {
 }
 
 export function formatRelative(date: string | Date | number): string {
-  const d = new Date(date);
+  const d = toDate(date);
   const diff = Date.now() - d.getTime();
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return "just now";
@@ -34,12 +46,12 @@ export function readingTime(markdown: string): number {
 
 export function truncate(text: string, max = 140): string {
   if (text.length <= max) return text;
-  return text.slice(0, max).trimEnd() + "…";
+  return text.slice(0, max).trimEnd() + "\u2026";
 }
 
 export function shortNpub(npub: string): string {
   if (!npub || npub.length < 16) return npub;
-  return `${npub.slice(0, 8)}…${npub.slice(-4)}`;
+  return `${npub.slice(0, 8)}\u2026${npub.slice(-4)}`;
 }
 
 export function slugify(text: string): string {
