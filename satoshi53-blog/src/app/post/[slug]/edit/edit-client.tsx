@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -14,13 +14,14 @@ import {
   triggerRebuild,
 } from "@/lib/nostr";
 import type { Article } from "@/lib/types";
-import { useLocalStorage } from "@/lib/hooks";
+import { useLocalStorage, useMounted } from "@/lib/hooks";
 
 const WRITER_KEY = "s53_writer_nsec";
 const NSEC_KEY = "s53_nsec";
 
 export default function EditPostClient({ slug }: { slug: string }) {
   const router = useRouter();
+  const mounted = useMounted();
   const writerNpub = useLocalStorage(WRITER_KEY);
   const nsec = useLocalStorage(NSEC_KEY);
   const [sk, setSk] = useState<Uint8Array | null>(null);
@@ -35,6 +36,7 @@ export default function EditPostClient({ slug }: { slug: string }) {
   const [pending, startTransition] = useTransition();
 
   useEffect(() => {
+    if (!mounted) return;
     if (!writerNpub || !nsec || !isWriterNpub(writerNpub)) {
       router.replace("/writer/");
       return;
@@ -46,7 +48,7 @@ export default function EditPostClient({ slug }: { slug: string }) {
     }
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSk(secret);
-  }, [writerNpub, nsec, router]);
+  }, [mounted, writerNpub, nsec, router]);
 
   useEffect(() => {
     if (!sk) return;
@@ -95,15 +97,10 @@ export default function EditPostClient({ slug }: { slug: string }) {
     });
   }
 
-  if (!sk) {
+  if (!mounted || !sk) {
     return (
       <AppShell>
-        <p className="text-muted-foreground">
-          Redirecting to writer unlock…{" "}
-          <Link href="/writer/" className="text-warm-orange underline">
-            go now
-          </Link>
-        </p>
+        <p className="text-muted-foreground">Loading…</p>
       </AppShell>
     );
   }

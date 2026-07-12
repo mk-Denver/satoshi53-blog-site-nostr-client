@@ -1,7 +1,6 @@
-import { fetchArticles } from "@/lib/nostr";
+﻿import { fetchArticles } from "@/lib/nostr";
 import EditPostClient from "./edit-client";
 
-export const dynamicParams = false;
 
 export async function generateStaticParams() {
   const articles = await fetchArticles();

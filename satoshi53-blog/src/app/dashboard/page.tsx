@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -16,13 +16,14 @@ import {
 } from "@/lib/nostr";
 import type { Article, Author } from "@/lib/types";
 import { formatDate, shortNpub } from "@/lib/utils";
-import { useLocalStorage } from "@/lib/hooks";
+import { useLocalStorage, useMounted } from "@/lib/hooks";
 
 const WRITER_KEY = "s53_writer_nsec";
 const NSEC_KEY = "s53_nsec";
 
 export default function DashboardPage() {
   const router = useRouter();
+  const mounted = useMounted();
   const writerNpub = useLocalStorage(WRITER_KEY);
   const nsec = useLocalStorage(NSEC_KEY);
   const [sk, setSk] = useState<Uint8Array | null>(null);
@@ -32,6 +33,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Wait until mounted so useLocalStorage has returned real values
+    if (!mounted) return;
     if (!writerNpub || !nsec || !isWriterNpub(writerNpub)) {
       router.replace("/writer/");
       return;
@@ -43,13 +46,10 @@ export default function DashboardPage() {
     }
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSk(secret);
-  }, [writerNpub, nsec, router]);
+  }, [mounted, writerNpub, nsec, router]);
 
   useEffect(() => {
-    if (!sk) {
-      router.replace("/writer/");
-      return;
-    }
+    if (!sk) return;
     let cancelled = false;
     (async () => {
       const { getPublicKey } = await import("nostr-tools/pure");
@@ -72,12 +72,12 @@ export default function DashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, [sk, router]);
+  }, [sk]);
 
-  if (!sk) {
+  if (!mounted || !sk) {
     return (
       <AppShell>
-        <p className="text-muted-foreground">Redirecting to writer unlock…</p>
+        <p className="text-muted-foreground">Loading…</p>
       </AppShell>
     );
   }
@@ -97,7 +97,7 @@ export default function DashboardPage() {
               {author?.name || "Unnamed writer"}
             </h1>
             <p className="text-sm text-muted-foreground">
-              {shortNpub(localStorage.getItem(WRITER_KEY) || "")}
+              {shortNpub(writerNpub || "")}
             </p>
           </div>
           <Link href="/settings/">

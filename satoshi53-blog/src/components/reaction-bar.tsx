@@ -1,16 +1,13 @@
-"use client";
+﻿"use client";
 
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import { Input, Label } from "@/components/ui/input";
 import {
   publishReaction,
-  nsecToSecret,
   triggerRebuild,
 } from "@/lib/nostr";
+import { ReaderLogin, useReaderKey } from "@/components/reader-login";
 import type { ReactionSummary } from "@/lib/types";
-
-const NSEC_KEY = "s53_nsec";
 
 const QUICK_EMOJIS = ["❤️", "🦄", "🔥", "⚡", "👏"];
 
@@ -26,27 +23,19 @@ export function ReactionBar({
   initialReactions: ReactionSummary[];
 }) {
   const [reactions, setReactions] = useState(initialReactions);
-  const [nsec, setNsec] = useState("");
-  const [showNsec, setShowNsec] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const { sk } = useReaderKey();
 
   function react(emoji: string) {
-    if (!nsec.trim()) {
-      setShowNsec(true);
-      setError("Paste your nsec to sign the reaction.");
+    if (!sk) {
+      setError("Please log in to react.");
       return;
     }
     setError(null);
     setInfo(null);
     startTransition(async () => {
-      const sk = nsecToSecret(nsec);
-      if (!sk) {
-        setError("Invalid nsec.");
-        return;
-      }
-      localStorage.setItem(NSEC_KEY, nsec.trim());
       const res = await publishReaction({
         sk,
         emoji,
@@ -72,7 +61,7 @@ export function ReactionBar({
 
   return (
     <div>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2 mb-3">
         {reactions.map((r) => (
           <span
             key={r.emoji}
@@ -87,35 +76,30 @@ export function ReactionBar({
         )}
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-2">
-        {QUICK_EMOJIS.map((emoji) => (
-          <Button
-            key={emoji}
-            size="sm"
-            variant="outline"
-            onClick={() => react(emoji)}
-            disabled={pending}
-          >
-            {emoji}
-          </Button>
-        ))}
-      </div>
-
-      {showNsec && (
-        <div className="mt-3">
-          <Label htmlFor="rxn-nsec">Your nsec (signing key — stays in browser)</Label>
-          <Input
-            id="rxn-nsec"
-            type="password"
-            value={nsec}
-            onChange={(e) => setNsec(e.target.value)}
-            placeholder="nsec1…"
-            className="max-w-sm"
-          />
+      {sk ? (
+        <div>
+          <div className="flex flex-wrap gap-2">
+            {QUICK_EMOJIS.map((emoji) => (
+              <Button
+                key={emoji}
+                size="sm"
+                variant="outline"
+                onClick={() => react(emoji)}
+                disabled={pending}
+              >
+                {emoji}
+              </Button>
+            ))}
+          </div>
+          {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
+          {info && <p className="mt-2 text-sm text-warm-orange">{info}</p>}
+        </div>
+      ) : (
+        <div>
+          <p className="text-sm text-muted-foreground mb-3">Log in to react</p>
+          <ReaderLogin />
         </div>
       )}
-      {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
-      {info && <p className="mt-2 text-sm text-warm-orange">{info}</p>}
     </div>
   );
 }

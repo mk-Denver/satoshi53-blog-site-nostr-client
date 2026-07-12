@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { Avatar } from "@/components/ui/avatar";
@@ -15,7 +15,6 @@ import {
 } from "@/lib/nostr";
 import { formatDate, shortNpub } from "@/lib/utils";
 
-export const dynamicParams = false;
 
 export async function generateStaticParams() {
   const articles = await fetchArticles();
@@ -69,7 +68,7 @@ export default async function PostPage({
               {author?.name || shortNpub(post.npub)}
             </Link>
             <p className="text-xs text-muted-foreground">
-              {formatDate(post.publishedAt)} · {post.readingTime} min read
+              {formatDate(post.publishedAt)} Â· {post.readingTime} min read
             </p>
           </div>
           <div className="ml-auto">

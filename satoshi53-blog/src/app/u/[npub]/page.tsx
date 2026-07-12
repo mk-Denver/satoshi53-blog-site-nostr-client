@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+﻿import { notFound } from "next/navigation";
 import { nip19 } from "nostr-tools";
 import { AppShell } from "@/components/app-shell";
 import { PostCard } from "@/components/post-card";
@@ -8,7 +8,6 @@ import { ALLOWED_NPUBS } from "@/lib/constants";
 import { shortNpub } from "@/lib/utils";
 import type { ArticleWithMeta } from "@/lib/types";
 
-export const dynamicParams = false;
 
 export async function generateStaticParams() {
   const articles = await fetchArticles();

@@ -1,10 +1,9 @@
-import { notFound } from "next/navigation";
+﻿import { notFound } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { PostCard } from "@/components/post-card";
 import { fetchArticles, fetchAuthors, fetchComments, fetchReactions } from "@/lib/nostr";
 import type { ArticleWithMeta } from "@/lib/types";
 
-export const dynamicParams = false;
 
 export async function generateStaticParams() {
   const articles = await fetchArticles();

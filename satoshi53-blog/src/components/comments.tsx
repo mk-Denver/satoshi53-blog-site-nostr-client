@@ -1,18 +1,16 @@
-"use client";
+﻿"use client";
 
 import { useState, useTransition } from "react";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Textarea, Input, Label } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/input";
 import {
   publishComment,
-  nsecToSecret,
   triggerRebuild,
 } from "@/lib/nostr";
+import { ReaderLogin, useReaderKey } from "@/components/reader-login";
 import { formatRelative, shortNpub } from "@/lib/utils";
 import type { CommentItem } from "@/lib/types";
-
-const NSEC_KEY = "s53_nsec";
 
 export function Comments({
   articleD,
@@ -27,25 +25,23 @@ export function Comments({
 }) {
   const [comments] = useState(initialComments);
   const [body, setBody] = useState("");
-  const [nsec, setNsec] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const { sk } = useReaderKey();
 
   function submit() {
-    if (!body.trim() || !nsec.trim()) {
-      setError("Add a comment and paste your nsec to sign.");
+    if (!sk) {
+      setError("Please log in to comment.");
+      return;
+    }
+    if (!body.trim()) {
+      setError("Comment cannot be empty.");
       return;
     }
     setError(null);
     setInfo(null);
     startTransition(async () => {
-      const sk = nsecToSecret(nsec);
-      if (!sk) {
-        setError("Invalid nsec. Get one at /writer/ if you're a team member.");
-        return;
-      }
-      localStorage.setItem(NSEC_KEY, nsec.trim());
       const res = await publishComment({
         sk,
         content: body.trim(),
@@ -60,7 +56,7 @@ export function Comments({
       const rebuilt = await triggerRebuild();
       if (!rebuilt) {
         setInfo(
-          "Comment published. Ask an admin to rebuild the site, or it will appear on the next scheduled build.",
+          "Comment published. It will appear on the next scheduled build.",
         );
       }
     });
@@ -72,34 +68,27 @@ export function Comments({
         Discussion ({comments.length})
       </h3>
 
-      <div className="mb-6 rounded-[var(--radius)] border border-border bg-card p-4">
-        <p className="mb-3 text-xs text-muted-foreground">
-          Comments are Nostr notes (kind 1). Sign with your nsec — it stays in your
-          browser and is never sent to a server.
-        </p>
-        <Label htmlFor="nsec">Your nsec (signing key)</Label>
-        <Input
-          id="nsec"
-          value={nsec}
-          onChange={(e) => setNsec(e.target.value)}
-          placeholder="nsec1…"
-          className="mb-3"
-          type="password"
-        />
-        <Textarea
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-          rows={3}
-          placeholder="Add to the discussion…"
-        />
-        {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
-        {info && <p className="mt-2 text-sm text-warm-orange">{info}</p>}
-        <div className="mt-2 flex justify-end">
-          <Button size="sm" onClick={submit} disabled={pending || !body.trim()}>
-            {pending ? "Publishing…" : "Publish comment"}
-          </Button>
+      {sk ? (
+        <div className="mb-6">
+          <Textarea
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            rows={3}
+            placeholder="Add to the discussion…"
+          />
+          {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
+          {info && <p className="mt-2 text-sm text-warm-orange">{info}</p>}
+          <div className="mt-2 flex justify-end">
+            <Button size="sm" onClick={submit} disabled={pending || !body.trim()}>
+              {pending ? "Publishing…" : "Publish comment"}
+            </Button>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="mb-6">
+          <ReaderLogin />
+        </div>
+      )}
 
       <div className="space-y-4">
         {comments.map((c) => (

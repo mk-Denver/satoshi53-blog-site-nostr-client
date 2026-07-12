@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -6,18 +6,20 @@ import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { PostEditor } from "@/components/post-editor";
 import { nsecToSecret, isWriterNpub } from "@/lib/nostr";
-import { useLocalStorage } from "@/lib/hooks";
+import { useLocalStorage, useMounted } from "@/lib/hooks";
 
 const WRITER_KEY = "s53_writer_nsec";
 const NSEC_KEY = "s53_nsec";
 
 export default function NewPostPage() {
   const router = useRouter();
+  const mounted = useMounted();
   const writerNpub = useLocalStorage(WRITER_KEY);
   const nsec = useLocalStorage(NSEC_KEY);
   const [sk, setSk] = useState<Uint8Array | null>(null);
 
   useEffect(() => {
+    if (!mounted) return;
     if (!writerNpub || !nsec || !isWriterNpub(writerNpub)) {
       router.replace("/writer/");
       return;
@@ -29,9 +31,9 @@ export default function NewPostPage() {
     }
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSk(secret);
-  }, [writerNpub, nsec, router]);
+  }, [mounted, writerNpub, nsec, router]);
 
-  if (!sk) {
+  if (!mounted || !sk) {
     return (
       <AppShell>
         <p className="text-muted-foreground">
