@@ -23,10 +23,6 @@ export const metadata: Metadata = {
   },
   description:
     "Bitcoin, culture, and African creativity — published on Nostr.",
-  icons: {
-    icon: "/favicon.ico",
-  },
-  robots: { index: false, follow: false },
 };
 
 export default function RootLayout({

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Pencil } from "lucide-react";
 import { nsecToSecret } from "@/lib/nostr";
+import { useLocalStorage } from "@/lib/hooks";
 
 const NSEC_KEY = "s53_nsec";
 
@@ -15,17 +16,17 @@ export function EditButton({
   slug: string;
   authorPubkey: string;
 }) {
+  const nsec = useLocalStorage(NSEC_KEY);
   const [canEdit, setCanEdit] = useState(false);
 
   useEffect(() => {
-    const nsec = localStorage.getItem(NSEC_KEY);
     if (!nsec) return;
     const sk = nsecToSecret(nsec);
     if (!sk) return;
     import("nostr-tools/pure").then(({ getPublicKey }) => {
       setCanEdit(getPublicKey(sk) === authorPubkey);
     });
-  }, [authorPubkey]);
+  }, [nsec, authorPubkey]);
 
   if (!canEdit) return null;
 

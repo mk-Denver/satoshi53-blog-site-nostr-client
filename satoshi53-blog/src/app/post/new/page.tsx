@@ -6,24 +6,30 @@ import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { PostEditor } from "@/components/post-editor";
 import { nsecToSecret, isWriterNpub } from "@/lib/nostr";
+import { useLocalStorage } from "@/lib/hooks";
 
 const WRITER_KEY = "s53_writer_nsec";
 const NSEC_KEY = "s53_nsec";
 
 export default function NewPostPage() {
   const router = useRouter();
-
-  const sk = useState<Uint8Array | null>(() => {
-    if (typeof window === "undefined") return null;
-    const writerNpub = localStorage.getItem(WRITER_KEY);
-    const nsec = localStorage.getItem(NSEC_KEY);
-    if (!writerNpub || !nsec || !isWriterNpub(writerNpub)) return null;
-    return nsecToSecret(nsec);
-  })[0];
+  const writerNpub = useLocalStorage(WRITER_KEY);
+  const nsec = useLocalStorage(NSEC_KEY);
+  const [sk, setSk] = useState<Uint8Array | null>(null);
 
   useEffect(() => {
-    if (!sk) router.replace("/writer/");
-  }, [sk, router]);
+    if (!writerNpub || !nsec || !isWriterNpub(writerNpub)) {
+      router.replace("/writer/");
+      return;
+    }
+    const secret = nsecToSecret(nsec);
+    if (!secret) {
+      router.replace("/writer/");
+      return;
+    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSk(secret);
+  }, [writerNpub, nsec, router]);
 
   if (!sk) {
     return (

@@ -14,20 +14,16 @@ import {
   triggerRebuild,
 } from "@/lib/nostr";
 import type { Article } from "@/lib/types";
+import { useLocalStorage } from "@/lib/hooks";
 
 const WRITER_KEY = "s53_writer_nsec";
 const NSEC_KEY = "s53_nsec";
 
 export default function EditPostClient({ slug }: { slug: string }) {
   const router = useRouter();
-
-  const sk = useState<Uint8Array | null>(() => {
-    if (typeof window === "undefined") return null;
-    const writerNpub = localStorage.getItem(WRITER_KEY);
-    const nsec = localStorage.getItem(NSEC_KEY);
-    if (!writerNpub || !nsec || !isWriterNpub(writerNpub)) return null;
-    return nsecToSecret(nsec);
-  })[0];
+  const writerNpub = useLocalStorage(WRITER_KEY);
+  const nsec = useLocalStorage(NSEC_KEY);
+  const [sk, setSk] = useState<Uint8Array | null>(null);
 
   const [article, setArticle] = useState<Article | null>(null);
   const [loading, setLoading] = useState(true);
@@ -39,10 +35,21 @@ export default function EditPostClient({ slug }: { slug: string }) {
   const [pending, startTransition] = useTransition();
 
   useEffect(() => {
-    if (!sk) {
+    if (!writerNpub || !nsec || !isWriterNpub(writerNpub)) {
       router.replace("/writer/");
       return;
     }
+    const secret = nsecToSecret(nsec);
+    if (!secret) {
+      router.replace("/writer/");
+      return;
+    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSk(secret);
+  }, [writerNpub, nsec, router]);
+
+  useEffect(() => {
+    if (!sk) return;
     let cancelled = false;
     (async () => {
       const articles = await fetchArticles();
@@ -66,7 +73,7 @@ export default function EditPostClient({ slug }: { slug: string }) {
     return () => {
       cancelled = true;
     };
-  }, [slug, sk, router]);
+  }, [slug, sk]);
 
   function handleDelete() {
     if (!sk || !article) return;

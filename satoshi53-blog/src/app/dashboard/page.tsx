@@ -16,24 +16,34 @@ import {
 } from "@/lib/nostr";
 import type { Article, Author } from "@/lib/types";
 import { formatDate, shortNpub } from "@/lib/utils";
+import { useLocalStorage } from "@/lib/hooks";
 
 const WRITER_KEY = "s53_writer_nsec";
 const NSEC_KEY = "s53_nsec";
 
 export default function DashboardPage() {
   const router = useRouter();
-
-  const sk = useState<Uint8Array | null>(() => {
-    if (typeof window === "undefined") return null;
-    const writerNpub = localStorage.getItem(WRITER_KEY);
-    const nsec = localStorage.getItem(NSEC_KEY);
-    if (!writerNpub || !nsec || !isWriterNpub(writerNpub)) return null;
-    return nsecToSecret(nsec);
-  })[0];
+  const writerNpub = useLocalStorage(WRITER_KEY);
+  const nsec = useLocalStorage(NSEC_KEY);
+  const [sk, setSk] = useState<Uint8Array | null>(null);
 
   const [articles, setArticles] = useState<Article[]>([]);
   const [author, setAuthor] = useState<Author | null>(null);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!writerNpub || !nsec || !isWriterNpub(writerNpub)) {
+      router.replace("/writer/");
+      return;
+    }
+    const secret = nsecToSecret(nsec);
+    if (!secret) {
+      router.replace("/writer/");
+      return;
+    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSk(secret);
+  }, [writerNpub, nsec, router]);
 
   useEffect(() => {
     if (!sk) {
@@ -50,7 +60,6 @@ export default function DashboardPage() {
         fetchDeletions(pubkey),
       ]);
       if (cancelled) return;
-      // Filter out deleted articles
       const visible = mine.filter(
         (a) =>
           !deleted.has(a.id) &&

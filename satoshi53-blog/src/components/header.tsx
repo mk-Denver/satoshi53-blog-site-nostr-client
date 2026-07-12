@@ -1,25 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 import { Search, PenSquare, LogIn, LogOut, LayoutGrid, Settings } from "lucide-react";
 import { Logo, NavIconLink } from "@/components/logo";
 import { Button } from "@/components/ui/button";
+import { useLocalStorage } from "@/lib/hooks";
 import { shortNpub } from "@/lib/utils";
 
 const WRITER_KEY = "s53_writer_nsec";
 const NSEC_KEY = "s53_nsec";
 
 export function Header() {
-  const [npub, setNpub] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem(WRITER_KEY);
-  });
+  const npub = useLocalStorage(WRITER_KEY);
 
   function signOut() {
     localStorage.removeItem(WRITER_KEY);
     localStorage.removeItem(NSEC_KEY);
-    setNpub(null);
+    window.location.reload();
   }
 
   return (
@@ -65,7 +62,7 @@ export function Header() {
               </button>
             </>
           )}
-          {typeof window !== "undefined" && !npub && (
+          {!npub && (
             <Link href="/writer/">
               <Button size="sm" variant="outline">
                 <LogIn className="h-4 w-4" /> Writer

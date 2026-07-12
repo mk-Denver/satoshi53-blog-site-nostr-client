@@ -12,6 +12,7 @@ import {
   generateNsec,
 } from "@/lib/nostr";
 import { SITE } from "@/lib/constants";
+import { useLocalStorage } from "@/lib/hooks";
 import { shortNpub } from "@/lib/utils";
 
 const WRITER_KEY = "s53_writer_nsec";
@@ -23,11 +24,7 @@ export default function WriterPage() {
   const [error, setError] = useState<string | null>(null);
   const [generated, setGenerated] = useState<{ nsec: string; npub: string } | null>(null);
 
-  function getUnlocked() {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem(WRITER_KEY);
-  }
-  const unlocked = getUnlocked();
+  const unlocked = useLocalStorage(WRITER_KEY);
 
   function unlock() {
     setError(null);
