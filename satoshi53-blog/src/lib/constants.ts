@@ -25,6 +25,7 @@ export const KIND_COMMENT = 1111; // NIP-22 structured comment on non-note conte
 export const KIND_NOTE = 1; // kind 1 = short text note (legacy comment fallback)
 export const KIND_REACTION = 7; // NIP-25 reactions (kind 7 with content emoji)
 export const KIND_PROFILE = 0; // kind 0 = profile metadata (setMetadata)
+export const KIND_DELETION = 5; // NIP-09 event deletion request
 
 // Netlify build hook to trigger a rebuild after a new article is published.
 export const REBUILD_WEBHOOK = process.env.NETLIFY_REBUILD_WEBHOOK || "";

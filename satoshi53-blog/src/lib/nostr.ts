@@ -12,6 +12,7 @@ import {
   KIND_NOTE,
   KIND_REACTION,
   KIND_PROFILE,
+  KIND_DELETION,
   REBUILD_WEBHOOK,
 } from "@/lib/constants";
 import type {
@@ -524,4 +525,123 @@ export async function triggerRebuild(): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+// ── Profile (kind 0, NIP-01 setMetadata) ─────────────────────────
+export async function publishProfile(params: {
+  sk: Uint8Array;
+  name: string;
+  about?: string;
+  picture?: string;
+  nip05?: string;
+  website?: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  const { sk, name, about, picture, nip05, website } = params;
+  const pubkey = getPublicKey(sk);
+  const content = JSON.stringify({
+    name: name.trim(),
+    about: about?.trim() || undefined,
+    picture: picture?.trim() || undefined,
+    nip05: nip05?.trim() || undefined,
+    website: website?.trim() || undefined,
+  });
+  const unsigned = {
+    kind: KIND_PROFILE,
+    pubkey,
+    created_at: Math.floor(Date.now() / 1000),
+    tags: [],
+    content,
+  };
+  const event = finalizeEvent(unsigned, sk);
+  if (!verifyEvent(event)) return { ok: false, error: "Invalid signature" };
+  await ensureRelayImpl();
+  const pool = new SimplePool();
+  let published = 0;
+  await Promise.all(
+    RELAYS.map(async (url) => {
+      try {
+        await pool.publish([url], event as unknown as Event);
+        published++;
+      } catch {
+        // skip
+      }
+    }),
+  );
+  pool.destroy();
+  return published > 0 ? { ok: true } : { ok: false, error: "No relay reachable" };
+}
+
+// ── Deletion (kind 5, NIP-09) ────────────────────────────────────
+export async function publishDeletion(params: {
+  sk: Uint8Array;
+  article: { id: string; pubkey: string; d: string };
+  reason?: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  const { sk, article, reason } = params;
+  const pubkey = getPublicKey(sk);
+  const aTag = `${KIND_ARTICLE}:${article.pubkey}:${article.d}`;
+  const tags: string[][] = [
+    ["e", article.id],
+    ["a", aTag],
+    ["k", String(KIND_ARTICLE)],
+  ];
+  const unsigned = {
+    kind: KIND_DELETION,
+    pubkey,
+    created_at: Math.floor(Date.now() / 1000),
+    tags,
+    content: reason || "",
+  };
+  const event = finalizeEvent(unsigned, sk);
+  if (!verifyEvent(event)) return { ok: false, error: "Invalid signature" };
+  await ensureRelayImpl();
+  const pool = new SimplePool();
+  let published = 0;
+  await Promise.all(
+    RELAYS.map(async (url) => {
+      try {
+        await pool.publish([url], event as unknown as Event);
+        published++;
+      } catch {
+        // skip
+      }
+    }),
+  );
+  pool.destroy();
+  return published > 0 ? { ok: true } : { ok: false, error: "No relay reachable" };
+}
+
+// ── Fetch articles by a specific pubkey (for dashboard) ──────────
+export async function fetchArticlesByAuthor(pubkey: string): Promise<Article[]> {
+  const events = await fetchEvents({
+    kinds: [KIND_ARTICLE],
+    authors: [pubkey],
+  });
+  const articles = events
+    .map(parseArticle)
+    .filter((a): a is Article => !!a);
+  // Keep latest per (pubkey, d)
+  const latest = new Map<string, Article>();
+  for (const a of articles) {
+    const key = `${a.pubkey}:${a.d}`;
+    const ex = latest.get(key);
+    if (!ex || a.createdAt > ex.createdAt) latest.set(key, a);
+  }
+  return [...latest.values()].sort((x, y) => y.publishedAt - x.publishedAt);
+}
+
+// ── Fetch deletion requests by a pubkey ──────────────────────────
+export async function fetchDeletions(pubkey: string): Promise<Set<string>> {
+  const events = await fetchEvents({
+    kinds: [KIND_DELETION],
+    authors: [pubkey],
+  });
+  const deleted = new Set<string>();
+  for (const e of events) {
+    for (const t of e.tags) {
+      if (t[0] === "e" && t[1]) deleted.add(t[1]);
+      if (t[0] === "a" && t[1]) deleted.add(t[1]);
+    }
+  }
+  return deleted;
 }

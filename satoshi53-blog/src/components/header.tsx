@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Search, PenSquare, LogIn, LogOut } from "lucide-react";
+import { Search, PenSquare, LogIn, LogOut, LayoutGrid, Settings } from "lucide-react";
 import { Logo, NavIconLink } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { shortNpub } from "@/lib/utils";
@@ -46,6 +46,8 @@ export function Header() {
           <NavIconLink href="/search/" icon={Search} label="Search" />
           {npub && (
             <>
+              <NavIconLink href="/dashboard/" icon={LayoutGrid} label="Dashboard" />
+              <NavIconLink href="/settings/" icon={Settings} label="Profile settings" />
               <Link href="/post/new/">
                 <Button size="sm" className="hidden sm:inline-flex">
                   <PenSquare className="h-4 w-4" /> Write

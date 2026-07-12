@@ -5,6 +5,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { TagPill } from "@/components/tag-pill";
 import { MarkdownRenderer } from "@/components/markdown-renderer";
 import { ReactionBar } from "@/components/reaction-bar";
+import { EditButton } from "@/components/edit-button";
 import { Comments } from "@/components/comments";
 import {
   fetchArticles,
@@ -70,6 +71,9 @@ export default async function PostPage({
             <p className="text-xs text-muted-foreground">
               {formatDate(post.publishedAt)} · {post.readingTime} min read
             </p>
+          </div>
+          <div className="ml-auto">
+            <EditButton slug={post.slug} authorPubkey={post.pubkey} />
           </div>
         </div>
 
