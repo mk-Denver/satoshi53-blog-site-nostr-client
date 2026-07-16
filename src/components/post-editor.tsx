@@ -57,18 +57,24 @@ export function PostEditor({
   // Fetch the writer's profile once so the preview shows author info
   // exactly as it will appear on the published post.
   useEffect(() => {
+    if (!preview || author) return;
     let cancelled = false;
     (async () => {
-      const { getPublicKey } = await import("nostr-tools/pure");
-      const pubkey = getPublicKey(sk);
-      const profile = await fetchAuthor(pubkey);
-      if (cancelled) return;
-      setAuthor(profile);
+      try {
+        const { getPublicKey } = await import("nostr-tools/pure");
+        const pubkey = getPublicKey(sk);
+        const profile = await fetchAuthor(pubkey);
+        if (cancelled) return;
+        setAuthor(profile);
+      } catch {
+        if (cancelled) return;
+        setAuthor(null);
+      }
     })();
     return () => {
       cancelled = true;
     };
-  }, [sk]);
+  }, [sk, preview, author]);
 
   const tags = tagsInput.split(",").map((t) => t.trim()).filter(Boolean);
 
