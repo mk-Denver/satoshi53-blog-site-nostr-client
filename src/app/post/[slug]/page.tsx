@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { AppShell } from "@/components/app-shell";
 import { Avatar } from "@/components/ui/avatar";
 import { TagPill } from "@/components/tag-pill";
@@ -22,6 +23,43 @@ export async function generateStaticParams() {
   const articles = await fetchArticles();
   if (articles.length === 0) return [{ slug: "placeholder" }];
   return articles.map((a) => ({ slug: a.slug }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const articles = await fetchArticles();
+  const post = articles.find((a) => a.slug === slug);
+  if (!post) return { title: "Not found" };
+
+  const title = `${post.title} · Satoshi53 Research`;
+  const description =
+    post.summary || `${post.title} — a Satoshi53 research publication.`;
+  const url = `${SITE.url}/post/${post.slug}/`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      type: "article",
+      url,
+      title,
+      description,
+      publishedTime: new Date(post.publishedAt * 1000).toISOString(),
+      authors: [post.npub],
+      tags: post.tags,
+      ...(post.coverImage ? { images: [post.coverImage] } : {}),
+    },
+    twitter: {
+      card: post.coverImage ? "summary_large_image" : "summary",
+      title,
+      description,
+      ...(post.coverImage ? { images: [post.coverImage] } : {}),
+    },
+  };
 }
 
 export default async function PostPage({

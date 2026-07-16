@@ -1,7 +1,9 @@
 ﻿import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { AppShell } from "@/components/app-shell";
 import { PostCard } from "@/components/post-card";
 import { fetchArticles, fetchAuthors, fetchComments, fetchReactions } from "@/lib/nostr";
+import { SITE } from "@/lib/constants";
 import type { ArticleWithMeta } from "@/lib/types";
 
 
@@ -12,6 +14,31 @@ export async function generateStaticParams() {
   // Ensure at least one param so static export doesn't choke on empty.
   if (tags.size === 0) tags.add("bitcoin");
   return [...tags].map((slug) => ({ slug }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const title = `#${slug} · Satoshi53 Research`;
+  const description = `Satoshi53 research publications tagged #${slug}.`;
+  return {
+    title,
+    description,
+    openGraph: {
+      type: "website",
+      url: `${SITE.url}/tag/${slug}/`,
+      title,
+      description,
+    },
+    twitter: {
+      card: "summary",
+      title,
+      description,
+    },
+  };
 }
 
 export default async function TagPage({
