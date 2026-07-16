@@ -35,19 +35,14 @@ export default async function HomePage() {
   return (
     <AppShell>
       <div className="mb-8">
-        <h1 className="font-serif text-3xl text-cream">Home</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Latest posts from the Satoshi53 team
-        </p>
+        <h1 className="font-serif text-3xl text-cream">
+          Latest research publications from the Satoshi53 team
+        </h1>
       </div>
 
       {posts.length === 0 ? (
         <div className="rounded-[var(--radius)] border border-border bg-card p-10 text-center">
           <p className="text-muted-foreground">No posts found from configured relays.</p>
-          <p className="mt-2 text-xs text-muted-foreground">
-            Make sure <code>NEXT_PUBLIC_RELAYS</code> and{" "}
-            <code>NEXT_PUBLIC_ALLOWED_NPUBS</code> are set.
-          </p>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
