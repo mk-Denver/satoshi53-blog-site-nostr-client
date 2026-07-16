@@ -1,10 +1,11 @@
 ﻿import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { nip19 } from "nostr-tools";
 import { AppShell } from "@/components/app-shell";
 import { PostCard } from "@/components/post-card";
 import { Avatar } from "@/components/ui/avatar";
 import { fetchArticles, fetchAuthor, fetchComments, fetchReactions } from "@/lib/nostr";
-import { ALLOWED_NPUBS } from "@/lib/constants";
+import { ALLOWED_NPUBS, SITE } from "@/lib/constants";
 import { shortNpub } from "@/lib/utils";
 import type { ArticleWithMeta } from "@/lib/types";
 
@@ -28,6 +29,42 @@ function toHex(npub: string): string | null {
   }
   if (/^[0-9a-f]{64}$/.test(npub)) return npub;
   return null;
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ npub: string }>;
+}): Promise<Metadata> {
+  const { npub } = await params;
+  const pubkey = toHex(npub);
+  if (!pubkey) return { title: "Not found" };
+
+  const author = await fetchAuthor(pubkey);
+  const name = author?.name || shortNpub(npub);
+  const title = `${name} · Satoshi53 Research`;
+  const description =
+    author?.about ||
+    `Research publications by ${name} on Satoshi53, published on Nostr.`;
+  const url = `${SITE.url}/u/${npub}/`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      type: "profile",
+      url,
+      title,
+      description,
+      ...(author?.picture ? { images: [author.picture] } : {}),
+    },
+    twitter: {
+      card: author?.picture ? "summary_large_image" : "summary",
+      title,
+      description,
+      ...(author?.picture ? { images: [author.picture] } : {}),
+    },
+  };
 }
 
 export default async function ProfilePage({
