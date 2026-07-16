@@ -40,6 +40,13 @@ export async function generateMetadata({
   const pubkey = toHex(npub);
   if (!pubkey) return { title: "Not found" };
 
+  const isAllowedNpub = ALLOWED_NPUBS.includes(npub.toLowerCase());
+  if (!isAllowedNpub) {
+    const articles = await fetchArticles();
+    const hasPosts = articles.some((a) => a.pubkey === pubkey);
+    if (!hasPosts) return { title: "Not found" };
+  }
+
   const author = await fetchAuthor(pubkey);
   const name = author?.name || shortNpub(npub);
   const title = `${name} · Satoshi53 Research`;
